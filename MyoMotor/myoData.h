@@ -30,7 +30,7 @@
 
 // Defulat setting
 #define DEFAULT_PORTNUM		4	// COM3
-#define DEFAULT_BAUDNUM		1 // 1Mbps
+#define DEFAULT_BAUDNUM		1   // 1Mbps
 #define CLAW_MOTOR_ID		1
 #define BASE_MOTOR_ID		2
 
@@ -80,16 +80,16 @@ extern std::vector<myoData> Myos;
 
 // syncrhonization
 extern std::mutex myoData_mutex;	// mutes on myoData
-extern std::ofstream data_file; // the file that emg data will be stored in
-extern double base_velocity;        // the velocity of the base motor moving
-extern double delta_t;              // how much time has passed since the last engage (in second)
-extern int goal_position_claw;      // the goal position for the claw motor
-extern int goal_position_base;      // the goal position for the base motor
+extern std::ofstream dataFile;     // the file that emg data will be stored in
+extern double baseVelocity;        // the velocity of the base motor moving
+extern double deltaTime;              // how much time has passed since the last engage (in second)
+extern int goalPosition_claw;      // the goal position for the claw motor
+extern int goalPosition_base;      // the goal position for the base motor
 extern bool isMyoData;				// is myoData updating 
 extern bool engaged;                // is the base motor engaged for rotation?
 extern bool opening;                // is the claw opening?
-extern bool base_ccw;                      // is the base motor rotating counter clockwise?
-extern bool write_led;              // should the led on the base motor lights up?
+extern bool baseCCW;               // is the base motor rotating counter clockwise?
+extern bool writeLED;              // should the led on the base motor lights up?
 
 // Maps a myo::Myo* to a unique ID starting at 0. It does so by looking for the PAIRED Myo pointer in Myos vector
 int identifyMyo(myo::Myo* myo);
@@ -104,6 +104,6 @@ void initMyo();
 void closeMyo();
 
 // given a Myo Pose, return a corresponding integer id
-int match_pose_id(myo::Pose pose);
+int matchPoseId(myo::Pose pose);
 
 #endif

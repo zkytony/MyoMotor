@@ -19,21 +19,21 @@ std::vector<myoData> Myos;
 std::mutex myoData_mutex;
 
 std::thread *MyoListenerThread;
-std::ofstream data_file;
+std::ofstream dataFile;
 
-myo::Pose current_pose;
-double base_velocity = 0;      // the velocity of the base motor moving
-double delta_t = 0;            // how much time has passed since the last engage (in second)
+myo::Pose currentPose;
+double baseVelocity = 0;      // the velocity of the base motor moving
+double deltaTime = 0;            // how much time has passed since the last engage (in second)
 double moderator = 0.25;
-int goal_position_claw = 0;    // the goal position for the claw motor
-int goal_position_base = 0;    // the goal position for the base motor
+int goalPosition_claw = 0;    // the goal position for the claw motor
+int goalPosition_base = 0;    // the goal position for the base motor
 int roll_0 = 0;                //
 bool roll_0_is_set = false;    // 
+bool isMyoData = true;         // is myoData updating 
 bool engaged = false;          // is the base motor engaged for rotation?
 bool opening = false;          // is the claw opening?
-bool write_led = true;         // should the led on the base motor lights up?
-bool base_ccw = false;         // is the base motor rotating counter clockwise?
-bool isMyoData = true;         // is myoData updating 
+bool writeLED = true;         // should the led on the base motor lights up?
+bool baseCCW = false;         // is the base motor rotating counter clockwise?
 
 class MyoEventsManager : public myo::DeviceListener {
 public:
@@ -122,8 +122,8 @@ public:
 			myo->unlock(myo::Myo::unlockHold);
 		}
 
-		data_file.open("Myo_EMG_data.csv");
-		data_file << "time,id,base_speed,base_goal_position,claw_load,roll_scale,engaged\n";
+		dataFile.open("Myo_EMG_data.csv");
+		dataFile << "time,id,base_speed,base_goal_position,claw_load,roll_scale,engaged\n";
     }
 
     // Called when Myo moved from a stable position on a person's arm after it recognized the arm.
@@ -139,7 +139,7 @@ public:
 			myo->lock();
 		}
 
-		data_file.close();
+		dataFile.close();
     }
 
     // onUnlock() is called whenever Myo has become unlocked, and will start delivering pose events.
@@ -171,12 +171,11 @@ public:
 	// Called when a paired Myo has provided a new pose.
     void onPose(myo::Myo* myo, uint64_t timestamp, myo::Pose pose)
     {	
-		current_pose = pose;
+		currentPose = pose;
 		int i_myo = identifyMyo(myo);
 		if(i_myo>=0)
 		{	Myos[i_myo].currentPose = pose;
 			Myos[i_myo].myo->notifyUserAction();
-			//std::cout << "Myo " << i_myo << " switched to pose " << pose.toString() << "." << std::endl;
 		}
 
 		if (pose == myo::Pose::fist) {
@@ -185,16 +184,16 @@ public:
 		}
 		else if (pose == myo::Pose::waveOut) {
 			// open the claw
-			goal_position_claw = conf::MAX_POS_CLAW;
+			goalPosition_claw = conf::MAX_POS_CLAW;
 			opening = true;
-			dxl_write_word(CLAW_MOTOR_ID, P_GOAL_POSITION_L, goal_position_claw);
+			dxl_write_word(CLAW_MOTOR_ID, P_GOAL_POSITION_L, goalPosition_claw);
 			engaged = false;
 		}
 		else if (pose == myo::Pose::waveIn) {
 			// close the claw
-			goal_position_claw = 0;
+			goalPosition_claw = 0;
 			opening = false;
-			dxl_write_word(CLAW_MOTOR_ID, P_GOAL_POSITION_L, goal_position_claw);
+			dxl_write_word(CLAW_MOTOR_ID, P_GOAL_POSITION_L, goalPosition_claw);
 			engaged = false;
 		}
 		else {
@@ -220,11 +219,6 @@ public:
         double yaw = atan2(2.0f * (quat.w() * quat.z() + quat.x() * quat.y()),
                         1.0f - 2.0f * (quat.y() * quat.y() + quat.z() * quat.z()));
 
-        // Convert the floating point angles in radians to a scale from 0 to 18.
-		/*roll_w  = static_cast<int>((roll + (float)M_PI)/(M_PI * 2.0f) * 18);
-        pitch_w = static_cast<int>((pitch + (float)M_PI/2.0f)/M_PI * 18);
-        yaw_w   = static_cast<int>((yaw + (float)M_PI)/(M_PI * 2.0f) * 18);*/
-
 		// Update data buffer
 		int i_myo = identifyMyo(myo);
 		if(i_myo>=0)
@@ -237,7 +231,6 @@ public:
 			}myoData_mutex.unlock();
 		}
 
-		// Convert the floating point angles in radians to a scale from 0 to 18.
 		int roll_scale = static_cast<int>((roll + (float)M_PI) / (M_PI * 2.0f) * conf::SENSITIVITY);
 
 		if (engaged) {
@@ -246,38 +239,36 @@ public:
 				roll_0_is_set = true;
 			}
 
-			if (write_led) {
+			if (writeLED) {
 				dxl_write_word(BASE_MOTOR_ID, LED, 1);
-				write_led = false;
+				writeLED = false;
 			}
 			
 			// Rotating clockwise
 			if (130 < roll_scale && roll_scale <= 250) {
-				if (!base_ccw) {
-					delta_t = 0;  // you are changing direction - so start the timing again
-					base_ccw = true;
+				if (!baseCCW) {
+					deltaTime = 0;  // you are changing direction - so start the timing again
+					baseCCW = true;
 				}
-				base_velocity = (roll_scale - roll_0)*(roll_scale - roll_0)*moderator;
+				baseVelocity = (roll_scale - roll_0)*(roll_scale - roll_0)*moderator;
 			}
 			// rotating counter clockwise
 			else if (0 <= roll_scale && roll_scale < 120) {
-				if (base_ccw) {
-					delta_t = 0;  // you are changing direction - so start the timing again
-					base_ccw = false;
+				if (baseCCW) {
+					deltaTime = 0;  // you are changing direction - so start the timing again
+					baseCCW = false;
 				}
-				base_velocity = -(roll_0 - roll_scale)*(roll_0 - roll_scale)*moderator;
+				baseVelocity = -(roll_0 - roll_scale)*(roll_0 - roll_scale)*moderator;
 			}
 		}
 		else {
-			base_velocity = 0.0;
+			baseVelocity = 0.0;
 			roll_0_is_set = false;
-			if (!write_led) {
+			if (!writeLED) {
 				dxl_write_word(BASE_MOTOR_ID, LED, 0);
-				write_led = true;
+				writeLED = true;
 			}
-			delta_t = 0;
-			//dxl_write_word(BASE_MOTOR_ID, LED, 0);
-			//dxl_write_byte(BASE_MOTOR_ID, LED_GREEN, 0);
+			deltaTime = 0;
 		}
     }
 
@@ -319,22 +310,22 @@ public:
     }
 
 	void update() {
-		delta_t += conf::DURATION / 1000.0;      // convert to seconds
-		goal_position_base += (int)(base_velocity * delta_t);
-		if (goal_position_base > conf::MAX_POS_BASE) { goal_position_base = conf::MAX_POS_BASE; }
-		if (goal_position_base < 0) { goal_position_base = 0; }
-		dxl_write_word(BASE_MOTOR_ID, P_GOAL_POSITION_L, goal_position_base);
+		deltaTime += conf::DURATION / 1000.0;      // convert to seconds
+		goalPosition_base += (int)(baseVelocity * deltaTime);
+		if (goalPosition_base > conf::MAX_POS_BASE) { goalPosition_base = conf::MAX_POS_BASE; }
+		if (goalPosition_base < 0) { goalPosition_base = 0; }
+		dxl_write_word(BASE_MOTOR_ID, P_GOAL_POSITION_L, goalPosition_base);
 	}
 
 	void log() {
 		// time,id,base_speed,base_goal_position,claw_load,roll_scale,engaged
 		double t;
 		Time_ms(&t, RELATIVE_TIME);
-		int id = match_pose_id(current_pose);
+		int id = matchPoseId(currentPose);
 		int base_speed = dxl_read_word(BASE_MOTOR_ID, PRESENT_SPEED_L);
 		int claw_load = dxl_read_word(CLAW_MOTOR_ID, PRESENT_LOAD_L);
 
-		data_file << t << "," << id << "," << base_speed << "," << goal_position_base << "," << claw_load << "," << "XX" << "," << (engaged ? "1" : "0") << "\n";
+		dataFile << t << "," << id << "," << base_speed << "," << goalPosition_base << "," << claw_load << "," << "XX" << "," << (engaged ? "1" : "0") << "\n";
 	}
 };
 
@@ -392,8 +383,8 @@ void initMyo()
 	isMyoData = true;
 	engaged = false;
 	opening = false;
-	goal_position_claw = 0;
-	goal_position_base = 0;
+	goalPosition_claw = 0;
+	goalPosition_base = 0;
 	MyoListenerThread = new std::thread(ListenerMyo);
 	printf("\nListening to Myo events");
 }
@@ -410,15 +401,15 @@ void closeMyo()
 	isMyoData = false;
 	engaged = false;
 	opening = false;
-	goal_position_claw = 0;
-	goal_position_base = 0;
+	goalPosition_claw = 0;
+	goalPosition_base = 0;
 	printf("\nWaiting for the Myo listener thread to join");
 	MyoListenerThread->join();
 	printf("\nStopped listening to Myo events");
 }
 
 // given a Myo Pose, return a corresponding integer id
-int match_pose_id(myo::Pose pose) {
+int matchPoseId(myo::Pose pose) {
 	if (pose == myo::Pose::unknown) {
 		return -1;
 	}

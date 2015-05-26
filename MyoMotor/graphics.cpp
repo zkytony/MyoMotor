@@ -6,7 +6,7 @@ int nMyos = 1; // #Myos expecting to connect
 myoData localMyo;
 
 const int trace_n = 500;
-extern double base_velocity;
+extern double baseVelocity;
 
 typedef struct _myoDataTrace
 {	// orientation trace
@@ -173,7 +173,7 @@ void Plot::DISPLAY()
 
 	hy = subplot(3, 1, 2);
 	title("velocity");
-	gg.at(0) = base_velocity;
+	gg.at(0) = baseVelocity;
 	bar(gg);
 
 	// increment trace counter 
