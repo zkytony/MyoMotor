@@ -11,9 +11,9 @@ Lets talk about the questions we want to answer as a part of user study.
 Visak 
 - Lets get started on these fixes asap. If there is something that needs attention, get it out of the door asap. We need to start the user study asap. Since we just have one device, user study will take some time.
 - Do you want to put all the documents on the googleDoc so everyone can review and edit. Make followings
-- Project report 
-- discussion and todo
-- <other things you want :) >
+  - Project report 
+  - discussion and todo
+  - <other things you want :) >
 - Extract information from this email and populate the doc. 
 
 Kaiyu 
