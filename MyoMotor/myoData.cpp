@@ -245,7 +245,7 @@ public:
 			}
 			
 			// Rotating clockwise
-			if (130 < roll_scale && roll_scale <= 250) {
+			if ((conf::SENSITIVITY + conf::GAP) / 2 < roll_scale && roll_scale <= conf::SENSITIVITY) {
 				if (!baseCCW) {
 					deltaTime = 0;  // you are changing direction - so start the timing again
 					baseCCW = true;
@@ -253,7 +253,7 @@ public:
 				baseVelocity = (roll_scale - roll_0)*(roll_scale - roll_0)*moderator;
 			}
 			// rotating counter clockwise
-			else if (0 <= roll_scale && roll_scale < 120) {
+			else if (0 <= roll_scale && roll_scale < (conf::SENSITIVITY - conf::GAP) / 2) {
 				if (baseCCW) {
 					deltaTime = 0;  // you are changing direction - so start the timing again
 					baseCCW = false;
