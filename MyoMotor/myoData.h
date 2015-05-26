@@ -7,13 +7,14 @@
 #include "dynamixel.h"
 #include "config.h"
 
+#define _USEGRAPHICS			true
+
 // Control table address
 #define P_GOAL_POSITION_L		30
 #define P_GOAL_POSITION_H		31
 #define P_PRESENT_POSITION_L	36
 #define P_PRESENT_POSITION_H	37
 #define P_MOVING				46
-#define _USEGRAPHICS			true
 #define TORQUE_ENABLE			24
 #define MOVING_SPEED_L			32
 #define MOVING_SPEED_H			33
