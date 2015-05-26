@@ -1,0 +1,58 @@
+Plan:
+
+Vikash's bullet points:
+
+Lets talk about the questions we want to answer as a part of user study.
+- usage attempts
+- successful attempts 
+- effectiveness of device (per usage time should decrease with time)
+- Usage duration 
+
+Visak 
+- Lets get started on these fixes asap. If there is something that needs attention, get it out of the door asap. We need to start the user study asap. Since we just have one device, user study will take some time.
+- Do you want to put all the documents on the googleDoc so everyone can review and edit. Make followings
+- Project report 
+- discussion and todo
+- <other things you want :) >
+- Extract information from this email and populate the doc. 
+
+Kaiyu 
+- Think about the log schema and let me know. The idea is to keep it minimal and yet complete.
+- Refactor the code. Develop code professionally.
+- Make sure to expose the parameters on the GUI so that users can adjust them on the fly.
+
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+
+Visak's reply:
+
+Cables:
+
+The cables I made last time is not long enough, but that is an easy fix.
+
+Batteries:
+
+I had checked the power consumption, 0.1 to 0.25 amps at 12 V, I'll have to verify this 
+again before looking for a battery. 
+
+I had also started to put together a document last time, took some pictures of objects 
+to manipulate. I thought it'll be good to try with the myo again
+
+------------------------------
+
+Kaiyu's reply:
+
+Questions in mind (for user testing):
+
+1. What can be done more easily with this third arm added?
+2. How can the controls be more intuitive? 
+
+Logging:
+
+Things on the log: relative time stamp, motor speed, motor load, gesture id, flags (engaged? 
+locked? and more). In order to better reconstruct everything, there should be more flags keeping 
+track of possible states. I will put more thought here. 
+
+Code refactoring:
+
+Once I settle down the external behavior (especially the graphing - with parameter sliders), 
+I will refactor the code according to guidelines I found.
