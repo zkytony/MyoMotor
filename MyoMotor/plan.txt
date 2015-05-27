@@ -56,3 +56,18 @@ Code refactoring:
 
 Once I settle down the external behavior (especially the graphing - with parameter sliders), 
 I will refactor the code according to guidelines I found.
+
+----------------------------------------
+
+Think of 10 things to grab with the claw:
+
+1. Glue
+2. Black cup
+3. Pottery cup
+4. Screw driver
+5. Big bottle
+6. white bottle
+7. marker
+8. Cell phone
+9. Green bag
+10. jacket
