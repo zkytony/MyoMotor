@@ -17,6 +17,7 @@
 
 std::vector<myoData> Myos;
 std::mutex myoData_mutex;
+double claw_load_vec[conf::REFRESH_LIMIT];
 
 std::thread *MyoListenerThread;
 std::ofstream dataFile;
@@ -27,13 +28,18 @@ double deltaTime = 0;            // how much time has passed since the last enga
 double moderator = 0.25;
 int goalPosition_claw = 0;    // the goal position for the claw motor
 int goalPosition_base = 0;    // the goal position for the base motor
+int claw_load_count = 0;
+int stable_load = 0;
 int roll_0 = 0;                //
+int clawLoad = 0;
 bool roll_0_is_set = false;    // 
 bool isMyoData = true;         // is myoData updating 
 bool engaged = false;          // is the base motor engaged for rotation?
 bool opening = false;          // is the claw opening?
 bool writeLED = true;         // should the led on the base motor lights up?
 bool baseCCW = false;         // is the base motor rotating counter clockwise?
+bool inPosition = false;      // arm in position?
+bool grabbing = false;
 
 class MyoEventsManager : public myo::DeviceListener {
 public:
@@ -123,7 +129,7 @@ public:
 		}
 
 		dataFile.open("Myo_EMG_data.csv");
-		dataFile << "time,id,base_speed,base_goal_position,claw_load,roll_scale,engaged\n";
+		dataFile << "time,id,base_speed,base_goal_position,claw_load,engaged,inPosition\n";
     }
 
     // Called when Myo moved from a stable position on a person's arm after it recognized the arm.
@@ -182,22 +188,25 @@ public:
 			// engage the motor
 			engaged = true;
 		}
-		else if (pose == myo::Pose::waveOut) {
-			// open the claw
-			goalPosition_claw = conf::MAX_POS_CLAW;
-			opening = true;
-			dxl_write_word(CLAW_MOTOR_ID, P_GOAL_POSITION_L, goalPosition_claw);
-			engaged = false;
-		}
-		else if (pose == myo::Pose::waveIn) {
-			// close the claw
-			goalPosition_claw = 0;
-			opening = false;
-			dxl_write_word(CLAW_MOTOR_ID, P_GOAL_POSITION_L, goalPosition_claw);
-			engaged = false;
-		}
 		else {
 			engaged = false;
+		}
+
+		if (inPosition) {
+			if (pose == myo::Pose::waveOut) {
+				// open the claw
+				goalPosition_claw = conf::MAX_POS_CLAW;
+				opening = true;
+				dxl_write_word(CLAW_MOTOR_ID, P_GOAL_POSITION_L, goalPosition_claw);
+				engaged = false;
+			}
+			else if (pose == myo::Pose::waveIn) {
+				// close the claw
+				goalPosition_claw = 0;
+				opening = false;
+				dxl_write_word(CLAW_MOTOR_ID, P_GOAL_POSITION_L, goalPosition_claw);
+				engaged = false;
+			}
 		}
 
 		//std::cout << (engaged ? "engaged" : "not") << std::endl;
@@ -232,6 +241,17 @@ public:
 		}
 
 		int roll_scale = static_cast<int>((roll + (float)M_PI) / (M_PI * 2.0f) * conf::SENSITIVITY);
+		int yaw_scale = static_cast<int>((yaw + (float)M_PI) / (M_PI * 2.0f) * conf::SENSITIVITY);
+		int pitch_scale = static_cast<int>((pitch + (float)M_PI) / (M_PI * 2.0f) * conf::SENSITIVITY);
+
+		// if your arm is stable - which means you are paying attention to control this program,
+		// then the yaw and pitch should be around 0.
+		//if (((conf::SENSITIVITY + conf::GAP) / 2 < yaw_scale && yaw_scale <= conf::SENSITIVITY) && ((conf::SENSITIVITY + conf::GAP) / 2 < pitch_scale && pitch_scale <= conf::SENSITIVITY)) {
+			inPosition = true;
+		//}
+		//else {
+		//	inPosition = false;
+		//}
 
 		if (engaged) {
 			if (!roll_0_is_set) {
@@ -323,9 +343,18 @@ public:
 		Time_ms(&t, RELATIVE_TIME);
 		int id = matchPoseId(currentPose);
 		int base_speed = dxl_read_word(BASE_MOTOR_ID, PRESENT_SPEED_L);
-		int claw_load = dxl_read_word(CLAW_MOTOR_ID, PRESENT_LOAD_L);
+		clawLoad = dxl_read_word(CLAW_MOTOR_ID, PRESENT_LOAD_L);
 
-		dataFile << t << "," << id << "," << base_speed << "," << goalPosition_base << "," << claw_load << "," << "XX" << "," << (engaged ? "1" : "0") << "\n";
+		if (clawLoad > 1000) {
+			clawLoad = 1000 - clawLoad; // claw is opening
+		}
+		if (claw_load_count >= conf::REFRESH_LIMIT) {
+			claw_load_count = 0;
+		}
+		claw_load_vec[claw_load_count] = (double)clawLoad;
+		claw_load_count++;
+
+		dataFile << t << "," << id << "," << base_speed << "," << goalPosition_base << "," << clawLoad << "," << (engaged ? "1" : "0") << "," << (inPosition ? "1" : "0") << "\n";
 	}
 };
 

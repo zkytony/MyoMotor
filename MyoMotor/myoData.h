@@ -26,6 +26,8 @@
 #define CCW_LIMIT_H				9
 #define PRESENT_LOAD_L			40
 #define PRESENT_LOAD_H			41
+#define PRESENT_VOLT			42
+#define PRESENT_TEMP			43
 #define RETURN_DELAY			5
 #define LED						25
 
