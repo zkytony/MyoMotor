@@ -1,3 +1,4 @@
+#include <sstream>
 #include "matplotPP.h"
 #include "myoData.h"
 #include "myo/cxx/Vector3.hpp"
@@ -7,6 +8,10 @@ myoData localMyo;
 
 const int trace_n = 500;
 extern double baseVelocity;
+extern double claw_load_vec[conf::REFRESH_LIMIT];
+extern bool engaged;
+extern bool inPosition;
+extern int clawLoad;
 
 typedef struct _myoDataTrace
 {	// orientation trace
@@ -113,7 +118,6 @@ void Plot::DISPLAY()
 			else
 				text(1, 2, localMyo.currentPose.toString(), false, "k", "lg", "k");
 
-
 			// Orientation =================================
 			localMyo.quat.normalized();
 			myo::Vector3<double> vec3 = myo::rotate(localMyo.quat, myo::Vector3<double>{1.0f, 0.0f, 0.0f});
@@ -163,18 +167,28 @@ void Plot::DISPLAY()
 
 	layer("Goal Position", false);
 	int hy;
-	hy = subplot(3, 1, 1);
-	axis(0, conf::REFRESH_LIMIT, 0, conf::Y_MAX);
-	title("Goal Position for BASE motor");
-	ylabel("us");
+	hy = subplot(2, 1, 1);
+	axis(0, conf::REFRESH_LIMIT, -1000, 1000);
+	title("claw load");
+	ylabel("load");
 
 	xlabel("time - " + std::to_string(conf::REFRESH_LIMIT * conf::DURATION) + " ms");
-	plot(goal_positions[1], conf::REFRESH_LIMIT);
+	plot(claw_load_vec, conf::REFRESH_LIMIT);
 
-	hy = subplot(3, 1, 2);
-	title("velocity");
-	gg.at(0) = baseVelocity;
-	bar(gg);
+	subplot(2, 2, 3, ""); axis(0); set("BackgroundColor", "none");
+	if (engaged)
+		text(1, 1, "Engaged", false, "k", "lg", "k");
+	else
+		text(1, 1, "Not Engaged", false, "k", "lg", "k");
+
+	if (inPosition)
+		text(1, 2, "In position", false, "k", "lg", "k");
+	else
+		text(1, 2, "Not in position", false, "k", "lg", "k");
+
+	stringstream ss;
+	ss << clawLoad;
+	text(1, 3, "Claw load: " + ss.str(), false, "k", "lg", "k");
 
 	// increment trace counter 
 	trace_i = (trace_i==trace_n-1)? 0: trace_i+1;
